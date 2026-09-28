@@ -4,11 +4,11 @@
         xmlns:m="using:VisualSupportTool.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="820"
+        mc:Ignorable="d" d:DesignWidth="1120" d:DesignHeight="820"
         x:Class="VisualSupportTool.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Width="1100" Height="820"
-        MinWidth="960" MinHeight="640"
+        Width="1120" Height="820"
+        MinWidth="980" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         Icon="/Assets/avalonia-logo.ico"
         Title="Visual C++ Runtime Helper (Steam &amp; MS Official)">
@@ -58,7 +58,7 @@
                             <TextBlock Text="Steam &amp; MS Official" FontSize="11" Foreground="White" FontWeight="SemiBold" />
                         </Border>
                     </StackPanel>
-                    <TextBlock Text="Steam _CommonRedist 파일과 시스템 레지스트리를 대조하여 필요한 런타임을 한눈에 확인하고 즉시 설치합니다."
+                    <TextBlock Text="Steam _CommonRedist 파일과 시스템 레지스트리를 대조하여 필요한 런타임을 한눈에 확인하고 즉시 설치 및 제거합니다."
                                FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
 
@@ -109,6 +109,14 @@
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <TextBlock Text="📥" />
                                 <TextBlock Text="누락 파일 일괄 다운로드" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding UninstallSelectedCommand}" IsEnabled="{Binding !IsBusy}"
+                                Background="#5A1E1E" Foreground="#FFD0D0" Padding="12,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="🗑️" />
+                                <TextBlock Text="선택 항목 일괄 제거" />
                             </StackPanel>
                         </Button>
 
@@ -167,14 +175,14 @@
         <!-- 3. 테이블 헤더 컬럼 (고정 너비로 겹침 완전 방지) -->
         <Border Grid.Row="2" Background="{DynamicResource LayerOnAcrylicAccentFillColorDefaultBrush}" 
                 Padding="20,8" Margin="0,6,0,0" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,1">
-            <Grid ColumnDefinitions="40, 190, 80, 160, 240, *, 170">
+            <Grid ColumnDefinitions="40, 180, 80, 150, 220, *, 240">
                 <TextBlock Grid.Column="0" Text="선택" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="버전" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="비트" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="3" Text="내 PC 설치 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="4" Text="로컬/Steam 파일 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="5" Text="진행 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="6" Text="작업" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="6" Text="작업 및 관리" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
         </Border>
 
@@ -184,7 +192,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="m:VcPackageInfo">
                         <Border Classes="package-row">
-                            <Grid ColumnDefinitions="40, 190, 80, 160, 240, *, 170" VerticalAlignment="Center">
+                            <Grid ColumnDefinitions="40, 180, 80, 150, 220, *, 240" VerticalAlignment="Center">
                                 <!-- Col 0: 선택 체크박스 -->
                                 <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
 
@@ -238,8 +246,8 @@
                                     <ProgressBar Value="{Binding DownloadProgress}" Maximum="100" Height="4" IsVisible="{Binding IsProcessing}" />
                                 </StackPanel>
 
-                                <!-- Col 6: 작업 버튼 그룹 -->
-                                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <!-- Col 6: 설치, 재설치, 제거, 다운로드, 폴더 열기 액션 버튼 그룹 -->
+                                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="5" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <!-- 미설치인 경우 녹색 강조 설치 버튼 -->
                                     <Button Classes="accent" Content="⚡ 설치"
                                             Background="#107C41" Foreground="White" FontWeight="Bold"
@@ -249,12 +257,21 @@
                                             ToolTip.Tip="사일런트 무인 설치 실행 (관리자 권한)"
                                             IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
 
-                                    <!-- 이미 설치된 경우 일반 재설치 버튼 -->
+                                    <!-- 이미 설치된 경우: 재설치 버튼 -->
                                     <Button Content="재설치"
                                             IsVisible="{Binding IsSystemInstalled}"
                                             Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).InstallSingleCommand}" 
                                             CommandParameter="{Binding}"
-                                            ToolTip.Tip="다시 설치 실행"
+                                            ToolTip.Tip="패키지 다시 설치 실행"
+                                            IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+
+                                    <!-- 이미 설치된 경우: 빨간색 제거 버튼 -->
+                                    <Button Content="🗑️ 제거"
+                                            Background="#8E1919" Foreground="White"
+                                            IsVisible="{Binding IsSystemInstalled}"
+                                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).UninstallSingleCommand}" 
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="시스템에서 이 런타임을 무인 언인스톨합니다"
                                             IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
 
                                     <!-- 파일이 없을 때 다운로드 버튼 -->

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -55,6 +56,10 @@ public partial class VcPackageInfo : ObservableObject
     public string ArchDisplay => IsX64 ? "64-bit (x64)" : "32-bit (x86)";
 
     public bool IsMissingInstall => !IsSystemInstalled;
+    public bool CanUninstall => IsSystemInstalled;
+
+    public List<string> UninstallCommands { get; set; } = [];
+    public List<string> InstalledGuids { get; set; } = [];
 
     public bool IsFromSteam => !string.IsNullOrEmpty(LocalFilePath) &&
         LocalFilePath.Contains("Steamworks Shared", StringComparison.OrdinalIgnoreCase);

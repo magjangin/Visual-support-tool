@@ -18,6 +18,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly RegistryCheckerService _registryChecker = new();
     private readonly DownloaderService _downloader = new();
     private readonly InstallerService _installer = new();
+    private readonly UninstallerService _uninstaller = new();
     private readonly SystemAdvisorService _systemAdvisor = new();
 
     [ObservableProperty]
@@ -532,6 +533,125 @@ public partial class MainViewModel : ViewModelBase
         UpdateCounts();
         IsBusy = false;
         StatusText = "미설치 패키지 일괄 설치 작업이 완료되었습니다.";
+    }
+
+    [RelayCommand]
+    public async Task UninstallSingleAsync(VcPackageInfo package)
+    {
+        if (package == null || IsBusy) return;
+
+        IsBusy = true;
+        package.IsProcessing = true;
+        package.StatusMessage = "제거 실행 중 (UAC 권한 요청)...";
+        StatusText = $"{package.ShortTitle} {package.ArchTag} 제거 중...";
+
+        try
+        {
+            var result = await _uninstaller.UninstallAsync(package);
+            package.StatusMessage = result.Message;
+            StatusText = $"{package.ShortTitle} {package.ArchTag}: {result.Message}";
+            _registryChecker.UpdatePackageInstalledStatus(Packages);
+            UpdateCounts();
+        }
+        catch (Exception ex)
+        {
+            package.StatusMessage = $"제거 실패: {ex.Message}";
+            StatusText = $"제거 실패: {ex.Message}";
+        }
+        finally
+        {
+            package.IsProcessing = false;
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task CleanReinstallSingleAsync(VcPackageInfo package)
+    {
+        if (package == null || IsBusy) return;
+
+        IsBusy = true;
+        package.IsProcessing = true;
+        StatusText = $"{package.ShortTitle} {package.ArchTag} 클린 재설치 중 (제거 후 재설치)...";
+
+        try
+        {
+            // 1단계: 제거
+            package.StatusMessage = "기존 버전 제거 중...";
+            await _uninstaller.UninstallAsync(package);
+            _registryChecker.UpdatePackageInstalledStatus(Packages);
+
+            // 2단계: 설치 (로컬 파일 없으면 다운로드)
+            if (!package.IsLocalFileFound)
+            {
+                package.StatusMessage = "설치 파일 다운로드 중...";
+                var saved = await _downloader.DownloadPackageAsync(package, DownloadPath);
+                package.LocalFilePath = saved;
+                package.IsLocalFileFound = true;
+            }
+
+            package.StatusMessage = "재설치 실행 중...";
+            var installResult = await _installer.InstallAsync(package);
+            package.StatusMessage = $"클린 재설치: {installResult.Message}";
+            StatusText = $"{package.ShortTitle} {package.ArchTag}: {installResult.Message}";
+
+            _registryChecker.UpdatePackageInstalledStatus(Packages);
+            UpdateCounts();
+        }
+        catch (Exception ex)
+        {
+            package.StatusMessage = $"클린 재설치 오류: {ex.Message}";
+            StatusText = $"클린 재설치 실패: {ex.Message}";
+        }
+        finally
+        {
+            package.IsProcessing = false;
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task UninstallSelectedAsync()
+    {
+        if (IsBusy) return;
+
+        var targets = Packages.Where(p => p.IsSelected && p.IsSystemInstalled).ToList();
+        if (targets.Count == 0)
+        {
+            StatusText = "제거할 선택된 설치 패키지가 없습니다.";
+            return;
+        }
+
+        IsBusy = true;
+        int completed = 0;
+
+        foreach (var pkg in targets)
+        {
+            completed++;
+            StatusText = $"[{completed}/{targets.Count}] {pkg.ShortTitle} {pkg.ArchTag} 제거 중...";
+            pkg.IsProcessing = true;
+            pkg.StatusMessage = "제거 중...";
+
+            try
+            {
+                var result = await _uninstaller.UninstallAsync(pkg);
+                pkg.StatusMessage = result.Message;
+            }
+            catch (Exception ex)
+            {
+                pkg.StatusMessage = $"제거 실패: {ex.Message}";
+            }
+            finally
+            {
+                pkg.IsProcessing = false;
+                OverallProgress = (double)completed / targets.Count * 100.0;
+            }
+        }
+
+        _registryChecker.UpdatePackageInstalledStatus(Packages);
+        UpdateCounts();
+        IsBusy = false;
+        StatusText = $"선택한 {targets.Count}개 패키지 제거 작업이 완료되었습니다.";
     }
 
     [RelayCommand]

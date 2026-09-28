@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 
@@ -8,7 +9,14 @@ namespace VisualSupportTool.Services;
 [SupportedOSPlatform("windows")]
 public class RegistryCheckerService
 {
-    public record InstalledVcEntry(string DisplayName, string DisplayVersion, bool IsX64);
+    public record InstalledVcEntry(
+        string DisplayName,
+        string DisplayVersion,
+        bool IsX64,
+        string KeyName,
+        string? UninstallString,
+        string? QuietUninstallString
+    );
 
     public List<InstalledVcEntry> GetInstalledVcList()
     {
@@ -36,16 +44,18 @@ public class RegistryCheckerService
                         if (displayName.Contains("Visual C++", StringComparison.OrdinalIgnoreCase))
                         {
                             var version = subKey.GetValue("DisplayVersion") as string ?? string.Empty;
+                            var uninstallString = subKey.GetValue("UninstallString") as string;
+                            var quietUninstallString = subKey.GetValue("QuietUninstallString") as string;
+
                             bool isX64 = displayName.Contains("x64", StringComparison.OrdinalIgnoreCase) ||
                                          displayName.Contains("64-bit", StringComparison.OrdinalIgnoreCase);
 
-                            // x86 표시가 명시적으로 있거나 64비트가 아니면 x86으로 판별
                             if (!isX64 && !displayName.Contains("x86", StringComparison.OrdinalIgnoreCase))
                             {
                                 isX64 = (view == RegistryView.Registry64);
                             }
 
-                            result.Add(new InstalledVcEntry(displayName, version, isX64));
+                            result.Add(new InstalledVcEntry(displayName, version, isX64, subKeyName, uninstallString, quietUninstallString));
                         }
                     }
                     catch { }
@@ -63,13 +73,32 @@ public class RegistryCheckerService
 
         foreach (var pkg in packages)
         {
-            var match = FindMatchingInstall(pkg, installedList);
-            if (match != null)
+            var matches = FindMatchingInstalls(pkg, installedList);
+            pkg.UninstallCommands.Clear();
+            pkg.InstalledGuids.Clear();
+
+            if (matches.Count > 0)
             {
                 pkg.IsSystemInstalled = true;
-                pkg.InstalledVersion = string.IsNullOrWhiteSpace(match.DisplayVersion)
+
+                // 버전 정보 표시 (가장 구체적인 버전)
+                var bestMatch = matches.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.DisplayVersion)) ?? matches[0];
+                pkg.InstalledVersion = string.IsNullOrWhiteSpace(bestMatch.DisplayVersion)
                     ? "설치됨"
-                    : match.DisplayVersion;
+                    : bestMatch.DisplayVersion;
+
+                foreach (var m in matches)
+                {
+                    if (!string.IsNullOrWhiteSpace(m.QuietUninstallString))
+                        pkg.UninstallCommands.Add(m.QuietUninstallString);
+                    else if (!string.IsNullOrWhiteSpace(m.UninstallString))
+                        pkg.UninstallCommands.Add(m.UninstallString);
+
+                    if (m.KeyName.StartsWith('{') && m.KeyName.EndsWith('}'))
+                    {
+                        pkg.InstalledGuids.Add(m.KeyName);
+                    }
+                }
             }
             else
             {
@@ -79,13 +108,13 @@ public class RegistryCheckerService
         }
     }
 
-    private static InstalledVcEntry? FindMatchingInstall(Models.VcPackageInfo pkg, List<InstalledVcEntry> installedList)
+    private static List<InstalledVcEntry> FindMatchingInstalls(Models.VcPackageInfo pkg, List<InstalledVcEntry> installedList)
     {
         bool targetIsX64 = pkg.Architecture == Models.PackageArch.X64;
+        var matched = new List<InstalledVcEntry>();
 
         foreach (var item in installedList)
         {
-            // 아키텍처 일치 검사
             bool itemIsX64 = item.IsX64 || item.DisplayName.Contains("x64", StringComparison.OrdinalIgnoreCase);
             bool itemIsX86 = !item.IsX64 || item.DisplayName.Contains("x86", StringComparison.OrdinalIgnoreCase);
 
@@ -102,19 +131,18 @@ public class RegistryCheckerService
                     item.DisplayName.Contains("2015", StringComparison.OrdinalIgnoreCase) ||
                     item.DisplayName.Contains("v14", StringComparison.OrdinalIgnoreCase))
                 {
-                    return item;
+                    matched.Add(item);
                 }
             }
             else
             {
-                // 2013, 2012, 2010, 2008, 2005
                 if (item.DisplayName.Contains(pkg.Year, StringComparison.OrdinalIgnoreCase))
                 {
-                    return item;
+                    matched.Add(item);
                 }
             }
         }
 
-        return null;
+        return matched;
     }
 }

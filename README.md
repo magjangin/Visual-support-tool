@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <b>Steam의 <code>_CommonRedist\vcredist</code> 파일과 시스템 레지스트리를 대조하여 필요한 런타임을 한눈에 확인하고 즉시 다운로드 및 설치하는 통합 관리 도구</b>
+  <b>Steam의 <code>_CommonRedist\vcredist</code> 파일과 시스템 레지스트리를 대조하여 필요한 런타임을 한눈에 확인하고 즉시 다운로드, 설치, 제거까지 지원하는 통합 관리 도구</b>
 </p>
 
 ---
@@ -32,18 +32,22 @@
 * ⚡ **원클릭 사일런트(무인) 일괄 설치**
   * **[미설치 패키지 원클릭 설치]** 버튼 한 번으로, 누락된 패키지만 골라 사일런트 스위치(`/quiet`, `/q`, `/norestart`)와 함께 UAC 관리자 권한으로 자동 순차 설치합니다.
 
+* 🗑️ **안전한 무인 제거(Uninstall) 및 클린 관리**
+  * 런타임이 충돌하거나 손상되었을 때 개별 행의 **`[🗑️ 제거]`** 버튼 또는 상단의 **`[선택 항목 일괄 제거]`** 버튼을 통해 무인 모드로 깨끗하게 제거할 수 있습니다.
+  * 번들 언인스톨러 스위치(`/uninstall /quiet /norestart`) 및 MSI 고유 제품 코드(`MsiExec.exe /X{GUID} /qn /norestart`)를 지능적으로 분석하여 안전하게 제거합니다.
+
 ---
 
 ## 📋 지원 패키지 목록
 
-| 패키지 | 아키텍처 | 사일런트 옵션 | 제공 출처 |
-| :--- | :---: | :---: | :--- |
-| **Visual C++ 2015-2022 (v14x)** | x64 / x86 | `/install /quiet /norestart` | Microsoft aka.ms / Steam 2022~2015 |
-| **Visual C++ 2013 (v120)** | x64 / x86 | `/install /quiet /norestart` | Microsoft CDN / Steam 2013 |
-| **Visual C++ 2012 Update 4 (v110)** | x64 / x86 | `/install /quiet /norestart` | Microsoft CDN / Steam 2012 |
-| **Visual C++ 2010 SP1 (v100)** | x64 / x86 | `/q /norestart` | Microsoft CDN / Steam 2010 |
-| **Visual C++ 2008 SP1 (v90)** | x64 / x86 | `/q` | Microsoft CDN / Steam 2008 |
-| **Visual C++ 2005 SP1 (v80)** | x64 / x86 | `/q` | Microsoft CDN / Steam 2005 |
+| 패키지 | 아키텍처 | 설치 옵션 | 제거 옵션 | 제공 출처 |
+| :--- | :---: | :---: | :---: | :--- |
+| **Visual C++ 2015-2022 (v14x)** | x64 / x86 | `/install /quiet /norestart` | `/uninstall /quiet /norestart` | MS aka.ms / Steam 2022~2015 |
+| **Visual C++ 2013 (v120)** | x64 / x86 | `/install /quiet /norestart` | `/uninstall /quiet /norestart` | MS CDN / Steam 2013 |
+| **Visual C++ 2012 Update 4 (v110)** | x64 / x86 | `/install /quiet /norestart` | `/uninstall /quiet /norestart` | MS CDN / Steam 2012 |
+| **Visual C++ 2010 SP1 (v100)** | x64 / x86 | `/q /norestart` | `MsiExec /X{GUID} /qn` | MS CDN / Steam 2010 |
+| **Visual C++ 2008 SP1 (v90)** | x64 / x86 | `/q` | `MsiExec /X{GUID} /qn` | MS CDN / Steam 2008 |
+| **Visual C++ 2005 SP1 (v80)** | x64 / x86 | `/q` | `MsiExec /X{GUID} /qn` | MS CDN / Steam 2005 |
 
 ---
 
@@ -54,10 +58,11 @@
 * **Architecture Pattern:** MVVM (CommunityToolkit.Mvvm)
 * **Services:**
   * `SteamFinderService`: Steam 설치 경로 및 VDF 라이브러리 파싱 & vcredist 파일 검색
-  * `RegistryCheckerService`: 32-bit / 64-bit Windows 레지스트리 런타임 키 쿼리
+  * `RegistryCheckerService`: 32-bit / 64-bit Windows 레지스트리 런타임 키 및 언인스톨 GUID 쿼리
   * `SystemAdvisorService`: Windows OS 버전 및 빌드 감지, 스마트 설치 권장 알고리즘
   * `DownloaderService`: `HttpClient` 기반 비동기 청크 다운로드 및 진행률 리포트
   * `InstallerService`: UAC 관리자 권한 프로세스 제어 및 무인 설치 실행
+  * `UninstallerService`: 번들 래퍼 및 MsiExec 기반 무인 백그라운드 제거 엔진
 
 ---
 
