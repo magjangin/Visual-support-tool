@@ -691,6 +691,19 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    public void OpenDownloadFolder()
+    {
+        if (Directory.Exists(DownloadPath))
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = DownloadPath,
+                UseShellExecute = true
+            });
+        }
+    }
+
     private void InitialScan()
     {
         ScanAll();

@@ -93,9 +93,9 @@
                     </Border>
                 </StackPanel>
 
-                <!-- 액션 툴바 & 경로 바 -->
-                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,14,0,0" VerticalAlignment="Center">
-                    <!-- 대표 원클릭 액션 버튼 그룹 -->
+                <!-- 액션 툴바 -->
+                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" Margin="0,14,0,0" VerticalAlignment="Center">
+                    <!-- 좌측: 주요 액션 버튼 그룹 -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                         <Button Classes="accent" Command="{Binding InstallMissingCommand}" IsEnabled="{Binding !IsBusy}"
                                 Background="#107C41" Foreground="White" FontWeight="Bold" Padding="14,8">
@@ -128,13 +128,15 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Steam 경로 입력 및 바로 열기 -->
-                    <Grid Grid.Column="2" ColumnDefinitions="Auto,280,Auto" VerticalAlignment="Center">
-                        <TextBlock Grid.Column="0" Text="Steam 경로:" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBox Grid.Column="1" Text="{Binding SteamPath}" VerticalAlignment="Center" FontSize="11" Height="32"
-                                 PlaceholderText="Steam vcredist 경로..." ToolTip.Tip="{Binding SteamPath}" />
-                        <Button Grid.Column="2" Content="📂 폴더 열기" Command="{Binding OpenSteamFolderCommand}" Margin="6,0,0,0" Height="32" />
-                    </Grid>
+                    <!-- 우측: 위치 열기 버튼들 -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Content="📂 Steam 폴더 열기" Command="{Binding OpenSteamFolderCommand}" 
+                                ToolTip.Tip="{Binding SteamPath, StringFormat='{}Steam vcredist 캐시 경로: {0}'}" 
+                                Padding="12,8" />
+                        <Button Content="📁 다운로드 폴더 열기" Command="{Binding OpenDownloadFolderCommand}" 
+                                ToolTip.Tip="{Binding DownloadPath, StringFormat='{}다운로드 저장 경로: {0}'}" 
+                                Padding="12,8" />
+                    </StackPanel>
                 </Grid>
             </Grid>
         </Border>
