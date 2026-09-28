@@ -1,0 +1,294 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:VisualSupportTool.ViewModels"
+        xmlns:m="using:VisualSupportTool.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="820"
+        x:Class="VisualSupportTool.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="1100" Height="820"
+        MinWidth="960" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Visual C++ Runtime Helper (Steam &amp; MS Official)">
+
+    <Window.Styles>
+        <!-- 행 카드 스타일 -->
+        <Style Selector="Border.package-row">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="Border.package-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}" />
+        </Style>
+
+        <!-- 뱃지 스타일 -->
+        <Style Selector="Border.badge">
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+
+        <!-- 통계 요약 카드 스타일 -->
+        <Style Selector="Border.stat-card">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- 1. 상단 대시보드 헤더 -->
+        <Border Grid.Row="0" Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" 
+                Padding="20,16" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                <!-- 좌측 타이틀 -->
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="🛠️ Visual C++ 런타임 매니저" FontSize="20" FontWeight="Bold" />
+                        <Border Background="#2B88D8" Classes="badge">
+                            <TextBlock Text="Steam &amp; MS Official" FontSize="11" Foreground="White" FontWeight="SemiBold" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Steam _CommonRedist 파일과 시스템 레지스트리를 대조하여 필요한 런타임을 한눈에 확인하고 즉시 설치합니다."
+                               FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- 우측 현황 요약 카드 2개 -->
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                    <!-- 설치 상태 요약 카드 -->
+                    <Border Classes="stat-card">
+                        <StackPanel Orientation="Vertical" Spacing="2">
+                            <TextBlock Text="내 PC 설치 현황" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding InstalledCount}" FontSize="18" FontWeight="Bold" Foreground="#107C41" />
+                                <TextBlock Text="/" FontSize="16" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                <TextBlock Text="{Binding TotalCount}" FontSize="16" FontWeight="SemiBold" />
+                                <Border Background="#D83B01" Classes="badge" IsVisible="{Binding HasMissingInstalls}" Margin="4,0,0,0">
+                                    <TextBlock Text="{Binding MissingCount, StringFormat='{}{0}개 필요'}" FontSize="11" Foreground="White" FontWeight="Bold" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 보유 파일 요약 카드 -->
+                    <Border Classes="stat-card">
+                        <StackPanel Orientation="Vertical" Spacing="2">
+                            <TextBlock Text="설치 파일 보유 현황" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ReadyFilesCount}" FontSize="18" FontWeight="Bold" Foreground="#0078D4" />
+                                <TextBlock Text="/" FontSize="16" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                <TextBlock Text="{Binding TotalCount}" FontSize="16" FontWeight="SemiBold" />
+                                <TextBlock Text="준비됨" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Bottom" Margin="2,0,0,2" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- 액션 툴바 & 경로 바 -->
+                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,14,0,0" VerticalAlignment="Center">
+                    <!-- 대표 원클릭 액션 버튼 그룹 -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Button Classes="accent" Command="{Binding InstallMissingCommand}" IsEnabled="{Binding !IsBusy}"
+                                Background="#107C41" Foreground="White" FontWeight="Bold" Padding="14,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="⚡" />
+                                <TextBlock Text="미설치 패키지 원클릭 설치" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding DownloadAllMissingFilesCommand}" IsEnabled="{Binding !IsBusy}" Padding="12,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="📥" />
+                                <TextBlock Text="누락 파일 일괄 다운로드" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding ScanAllCommand}" IsEnabled="{Binding !IsBusy}" Padding="10,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="🔄" />
+                                <TextBlock Text="새로고침" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Steam 경로 입력 및 바로 열기 -->
+                    <Grid Grid.Column="2" ColumnDefinitions="Auto,280,Auto" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="0" Text="Steam 경로:" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding SteamPath}" VerticalAlignment="Center" FontSize="11" Height="32"
+                                 PlaceholderText="Steam vcredist 경로..." ToolTip.Tip="{Binding SteamPath}" />
+                        <Button Grid.Column="2" Content="📂 폴더 열기" Command="{Binding OpenSteamFolderCommand}" Margin="6,0,0,0" Height="32" />
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 2. 스마트 OS 진단 & 권장 가이드 카드 -->
+        <Border Grid.Row="1" Margin="16,10,16,4" Padding="14,12" CornerRadius="8"
+                BorderThickness="1"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+            <Grid ColumnDefinitions="Auto,*">
+                <!-- 좌측 상태 아이콘 -->
+                <TextBlock Grid.Column="0" Text="💡" FontSize="24" VerticalAlignment="Top" Margin="2,2,14,0" />
+
+                <!-- 우측 진단 내용 & 권장 사항 -->
+                <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <!-- OS 식별 뱃지 -->
+                        <Border Background="#1E4E79" Classes="badge">
+                            <TextBlock Text="{Binding OsDescription}" FontSize="11" Foreground="#A9D4FF" FontWeight="SemiBold" />
+                        </Border>
+                        <!-- 권장 제목 -->
+                        <TextBlock Text="{Binding AdvisorTitle}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- 진단 상세 안내 -->
+                    <TextBlock Text="{Binding AdvisorMessage}" FontSize="12" 
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                               TextWrapping="Wrap" LineHeight="18" />
+
+                    <!-- 권장 액션 힌트 -->
+                    <TextBlock Text="{Binding AdvisorActionHint}" FontSize="12" 
+                               FontWeight="SemiBold" Foreground="#32B5E5" 
+                               TextWrapping="Wrap" Margin="0,2,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 3. 테이블 헤더 컬럼 (고정 너비로 겹침 완전 방지) -->
+        <Border Grid.Row="2" Background="{DynamicResource LayerOnAcrylicAccentFillColorDefaultBrush}" 
+                Padding="20,8" Margin="0,6,0,0" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,1">
+            <Grid ColumnDefinitions="40, 190, 80, 160, 240, *, 170">
+                <TextBlock Grid.Column="0" Text="선택" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="버전" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="비트" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="내 PC 설치 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="로컬/Steam 파일 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="진행 상태" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="6" Text="작업" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- 4. 패키지 행 리스트 -->
+        <ScrollViewer Grid.Row="3" Padding="16,8">
+            <ItemsControl ItemsSource="{Binding Packages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:VcPackageInfo">
+                        <Border Classes="package-row">
+                            <Grid ColumnDefinitions="40, 190, 80, 160, 240, *, 170" VerticalAlignment="Center">
+                                <!-- Col 0: 선택 체크박스 -->
+                                <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
+
+                                <!-- Col 1: 패키지 버전 이름 -->
+                                <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ShortTitle}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Year, StringFormat='{}연도: {0}'}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                </StackPanel>
+
+                                <!-- Col 2: 독립된 아키텍처 뱃지 -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <Border Classes="badge" Background="#0063B1" IsVisible="{Binding IsX64}">
+                                        <TextBlock Text="64-bit" FontSize="11" Foreground="White" FontWeight="Bold" />
+                                    </Border>
+                                    <Border Classes="badge" Background="#744DA9" IsVisible="{Binding !IsX64}">
+                                        <TextBlock Text="32-bit" FontSize="11" Foreground="White" FontWeight="Bold" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Col 3: PC 설치 여부 상태 -->
+                                <StackPanel Grid.Column="3" Orientation="Vertical" Spacing="3" VerticalAlignment="Center">
+                                    <Border Classes="badge" Background="#107C41" IsVisible="{Binding IsSystemInstalled}">
+                                        <TextBlock Text="✓ 설치됨" FontSize="11" Foreground="White" FontWeight="Bold" />
+                                    </Border>
+                                    <Border Classes="badge" Background="#D83B01" IsVisible="{Binding !IsSystemInstalled}">
+                                        <TextBlock Text="✕ 미설치" FontSize="11" Foreground="White" FontWeight="Bold" />
+                                    </Border>
+                                    <TextBlock Text="{Binding InstalledVersion}" FontSize="11" 
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                               IsVisible="{Binding IsSystemInstalled}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+
+                                <!-- Col 4: 로컬 / Steam 파일 상태 -->
+                                <StackPanel Grid.Column="4" Orientation="Vertical" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsFromSteam}">
+                                        <TextBlock Text="🎮" FontSize="12" />
+                                        <TextBlock Text="Steam 캐시 준비됨" FontSize="12" FontWeight="SemiBold" Foreground="#2B88D8" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsFromSteam}">
+                                        <TextBlock Text="💾" FontSize="12" IsVisible="{Binding IsLocalFileFound}" />
+                                        <TextBlock Text="다운로드 파일 준비됨" FontSize="12" FontWeight="SemiBold" Foreground="#107C41" IsVisible="{Binding IsLocalFileFound}" />
+                                        <TextBlock Text="⚠️" FontSize="12" IsVisible="{Binding !IsLocalFileFound}" />
+                                        <TextBlock Text="파일 다운로드 필요" FontSize="12" FontWeight="SemiBold" Foreground="#D83B01" IsVisible="{Binding !IsLocalFileFound}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding FileNameOnly}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding LocalFilePath}" />
+                                </StackPanel>
+
+                                <!-- Col 5: 진행 상태 텍스트 & 프로그레스 바 -->
+                                <StackPanel Grid.Column="5" Orientation="Vertical" Spacing="4" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                    <ProgressBar Value="{Binding DownloadProgress}" Maximum="100" Height="4" IsVisible="{Binding IsProcessing}" />
+                                </StackPanel>
+
+                                <!-- Col 6: 작업 버튼 그룹 -->
+                                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <!-- 미설치인 경우 녹색 강조 설치 버튼 -->
+                                    <Button Classes="accent" Content="⚡ 설치"
+                                            Background="#107C41" Foreground="White" FontWeight="Bold"
+                                            IsVisible="{Binding IsMissingInstall}"
+                                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).InstallSingleCommand}" 
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="사일런트 무인 설치 실행 (관리자 권한)"
+                                            IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+
+                                    <!-- 이미 설치된 경우 일반 재설치 버튼 -->
+                                    <Button Content="재설치"
+                                            IsVisible="{Binding IsSystemInstalled}"
+                                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).InstallSingleCommand}" 
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="다시 설치 실행"
+                                            IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+
+                                    <!-- 파일이 없을 때 다운로드 버튼 -->
+                                    <Button Content="📥 받기" 
+                                            IsVisible="{Binding !IsLocalFileFound}"
+                                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).DownloadSingleCommand}" 
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="마이크로소프트 공식 CDN에서 다운로드"
+                                            IsEnabled="{Binding !$parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+
+                                    <!-- 파일 위치 열기 버튼 -->
+                                    <Button Content="📂" 
+                                            Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).OpenFileLocationCommand}" 
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="보유 파일 위치를 탐색기에서 선택" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- 5. 하단 상태 표시줄 -->
+        <Border Grid.Row="4" Background="{DynamicResource SolidBackgroundFillColorBaseBrush}" 
+                Padding="16,8" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusText}" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="1" Text="다운로드 캐시:" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="2" Text="{Binding DownloadPath}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DownloadPath}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
