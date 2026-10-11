@@ -38,6 +38,13 @@
 
 ---
 
+## 💡 실전 활용 사례 & 트러블슈팅 (Troubleshooting)
+
+* ❓ **"플러그인 폴더에 DLL 파일이 분명히 존재하는데 왜 `DllNotFoundException`이 발생할까요?"**
+  * Unity(Mono/Il2Cpp) 및 스팀 게임 실행 시 자주 발생하는 **가짜 `DllNotFoundException` (Win32 Error 126)**의 작동 원리와, 왜 Visual C++ 런타임(특히 32비트 x86)이 필요한지에 대한 실전 사례 분석은 [**실전 트러블슈팅 가이드 (docs/troubleshooting-guide.md)**](docs/troubleshooting-guide.md)에서 자세히 확인하실 수 있습니다.
+
+---
+
 ## 📋 지원 패키지 목록
 
 | 패키지 | 아키텍처 | 설치 옵션 | 제거 옵션 | 제공 출처 |
